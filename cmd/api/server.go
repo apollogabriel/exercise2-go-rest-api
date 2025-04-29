@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"go-rest-api/internal/api/middleware"
 	"log"
 	"net/http"
 	"strings"
@@ -96,13 +97,15 @@ func main() {
 	cert := "cert.pem"
 	key := "key.pem"
 
-	http.HandleFunc("/", rootHandler)
+	mux := http.NewServeMux()
 
-	http.HandleFunc("/teachers/", teachersHandler)
+	mux.HandleFunc("/", rootHandler)
 
-	http.HandleFunc("/students/", studentsHandler)
+	mux.HandleFunc("/teachers/", teachersHandler)
 
-	http.HandleFunc("/execs/", execsHandler)
+	mux.HandleFunc("/students/", studentsHandler)
+
+	mux.HandleFunc("/execs/", execsHandler)
 
 	tlsConfig := &tls.Config{
 		MinVersion: tls.VersionTLS12,
@@ -110,7 +113,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:      port,
-		Handler:   nil,
+		Handler:   middleware.SecurityHeaders(mux),
 		TLSConfig: tlsConfig,
 	}
 
