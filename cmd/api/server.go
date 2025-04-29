@@ -42,13 +42,13 @@ func init() {
 	nextID++
 }
 
-func getTeachersHandler(w http.ResponseWriter, r *http.Request) {
-	teacherList := make([]Teacher, len(teachers))
+func getTeachersHandler(w http.ResponseWriter, _ *http.Request) {
+	teacherList := make([]Teacher, 0, len(teachers))
 
 	for _, value := range teachers {
 		teacherList = append(teacherList, value)
 	}
-
+	fmt.Println("TeachersList:", teacherList)
 	response := struct {
 		Status string    `json:"status"`
 		Count  int       `json:"count"`
