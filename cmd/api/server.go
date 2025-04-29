@@ -3,7 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"go-rest-api/internal/api/middleware"
+	mw "go-rest-api/internal/api/middleware"
 	"log"
 	"net/http"
 	"strings"
@@ -113,7 +113,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:      port,
-		Handler:   middleware.SecurityHeaders(mux),
+		Handler:   mw.SecurityHeaders(mw.Cors(mux)),
 		TLSConfig: tlsConfig,
 	}
 

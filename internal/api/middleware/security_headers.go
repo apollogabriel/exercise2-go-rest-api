@@ -1,8 +1,12 @@
 package middleware
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 func SecurityHeaders(next http.Handler) http.Handler {
+	fmt.Println("SecurityHeaders middleware called")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-DNS-Prefetch-Control", "off")
 		w.Header().Set("X-Frame-Options", "DENY")
