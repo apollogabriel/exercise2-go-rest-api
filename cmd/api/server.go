@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
@@ -21,6 +22,17 @@ func teachersHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(path)
 		fmt.Println("The ID is:", userID)
 
+		fmt.Println("Query Params:", r.URL.Query())
+		queryParams := r.URL.Query()
+		sortBy := queryParams.Get("sort_by")
+		key := queryParams.Get("key")
+		sortOrder := queryParams.Get("sort_order")
+
+		if sortOrder == "" {
+			sortOrder = "DESC"
+		}
+
+		fmt.Printf("sortBy: %v, sortOrder: %v, key: %v\n", sortBy, sortOrder, key)
 		w.Write([]byte("Hello GET teachers Route"))
 		fmt.Println("Hello GET teachers Route")
 	case http.MethodPost:
@@ -81,6 +93,9 @@ func execsHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	port := ":3000"
 
+	cert := "cert.pem"
+	key := "key.pem"
+
 	http.HandleFunc("/", rootHandler)
 
 	http.HandleFunc("/teachers/", teachersHandler)
@@ -89,8 +104,18 @@ func main() {
 
 	http.HandleFunc("/execs/", execsHandler)
 
+	tlsConfig := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+	}
+
+	server := &http.Server{
+		Addr:      port,
+		Handler:   nil,
+		TLSConfig: tlsConfig,
+	}
+
 	fmt.Println("Server is running on port:", port)
-	err := http.ListenAndServe(port, nil)
+	err := server.ListenAndServeTLS(cert, key)
 	if err != nil {
 		log.Fatalln("Error starting server:", err)
 	}
