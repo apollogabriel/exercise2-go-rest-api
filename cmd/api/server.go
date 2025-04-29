@@ -83,11 +83,11 @@ func main() {
 
 	http.HandleFunc("/", rootHandler)
 
-	http.HandleFunc("/teachers", teachersHandler)
+	http.HandleFunc("/teachers/", teachersHandler)
 
-	http.HandleFunc("/students", studentsHandler)
+	http.HandleFunc("/students/", studentsHandler)
 
-	http.HandleFunc("/execs", execsHandler)
+	http.HandleFunc("/execs/", execsHandler)
 
 	fmt.Println("Server is running on port:", port)
 	err := http.ListenAndServe(port, nil)
