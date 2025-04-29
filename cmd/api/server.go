@@ -2,13 +2,66 @@ package main
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	mw "go-rest-api/internal/api/middleware"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 )
+
+type Teacher struct {
+	ID        int    `json:"id,omitempty"`
+	FirstName string `json:"first_name,omitempty"`
+	LastName  string `json:"last_name,omitempty"`
+	Class     string `json:"class,omitempty"`
+	Subject   string `json:"subject,omitempty"`
+}
+
+var (
+	teachers = make(map[int]Teacher)
+	nextID   = 1
+)
+
+func init() {
+	teachers[nextID] = Teacher{
+		ID:        nextID,
+		FirstName: "Juan",
+		LastName:  "Perez",
+		Class:     "Apo",
+		Subject:   "Math",
+	}
+	nextID++
+	teachers[nextID] = Teacher{
+		ID:        nextID,
+		FirstName: "Pedro",
+		LastName:  "Castro",
+		Class:     "Rizal",
+		Subject:   "Science",
+	}
+	nextID++
+}
+
+func getTeachersHandler(w http.ResponseWriter, r *http.Request) {
+	teacherList := make([]Teacher, len(teachers))
+
+	for _, value := range teachers {
+		teacherList = append(teacherList, value)
+	}
+
+	response := struct {
+		Status string    `json:"status"`
+		Count  int       `json:"count"`
+		Data   []Teacher `json:"data"`
+	}{
+		Status: "success",
+		Count:  len(teachers),
+		Data:   teacherList,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello Root Route"))
@@ -18,25 +71,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 func teachersHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		fmt.Println(r.URL.Path)
-		path := strings.TrimPrefix(r.URL.Path, "/teachers/")
-		userID := strings.TrimSuffix(path, "/")
-		fmt.Println(path)
-		fmt.Println("The ID is:", userID)
-
-		fmt.Println("Query Params:", r.URL.Query())
-		queryParams := r.URL.Query()
-		sortBy := queryParams.Get("sort_by")
-		key := queryParams.Get("key")
-		sortOrder := queryParams.Get("sort_order")
-
-		if sortOrder == "" {
-			sortOrder = "DESC"
-		}
-
-		fmt.Printf("sortBy: %v, sortOrder: %v, key: %v\n", sortBy, sortOrder, key)
-		w.Write([]byte("Hello GET teachers Route"))
-		fmt.Println("Hello GET teachers Route")
+		getTeachersHandler(w, r)
 	case http.MethodPost:
 		w.Write([]byte("Hello POST teachers Route"))
 		fmt.Println("Hello POST teachers Route")
