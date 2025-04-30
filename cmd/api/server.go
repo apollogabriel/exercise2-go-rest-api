@@ -23,12 +23,13 @@ func main() {
 	cert := "cert.pem"
 	key := "key.pem"
 
-	_, err = sqlconnect.ConnectDb()
+	db, err := sqlconnect.ConnectDb()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	// goose create migration_name sql
+	defer db.Close()
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", handlers.RootHandler)

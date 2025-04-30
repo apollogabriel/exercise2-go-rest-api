@@ -3,7 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"go-rest-api/internal/models"
+	"go-rest-api/internal/repository/sqlconnect"
 	"net/http"
 	"strconv"
 	"strings"
@@ -16,7 +18,7 @@ var (
 
 func init() {
 	teachers[nextID] = models.Teacher{
-		ID:        nextID,
+		ID:        "1",
 		FirstName: "Juan",
 		LastName:  "Perez",
 		Class:     "Apo",
@@ -24,7 +26,7 @@ func init() {
 	}
 	nextID++
 	teachers[nextID] = models.Teacher{
-		ID:        nextID,
+		ID:        "2",
 		FirstName: "Pedro",
 		LastName:  "Castro",
 		Class:     "Rizal",
@@ -97,19 +99,48 @@ func getTeachersHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func addTeachersHandler(w http.ResponseWriter, r *http.Request) {
+	db, err := sqlconnect.ConnectDb()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer db.Close()
+
 	var newTeachers []models.Teacher
-	err := json.NewDecoder(r.Body).Decode(&newTeachers)
+	err = json.NewDecoder(r.Body).Decode(&newTeachers)
 	if err != nil {
 		http.Error(w, "Error parsing JSON", http.StatusBadRequest)
 		return
 	}
 
-	addedTeachers := make([]models.Teacher, len(newTeachers))
-	for i, newTeacher := range newTeachers {
-		newTeacher.ID = nextID
-		teachers[nextID] = newTeacher
-		addedTeachers[i] = newTeacher
-		nextID++
+	stmt, err := db.Prepare(`
+		INSERT INTO teachers (id, first_name, last_name, subject, class, email)
+		VALUES (?,?, ?, ?, ?, ?)
+	`)
+	if err != nil {
+		http.Error(w, "Error preparing statement", http.StatusInternalServerError)
+	}
+	defer stmt.Close()
+
+	addedTeachers := make([]models.Teacher, 0, len(newTeachers))
+	for _, newTeacher := range newTeachers {
+		//check for duplicate email
+		var existingID string
+		err = db.QueryRow("SELECT id FROM teachers WHERE email = ?", newTeacher.Email).Scan(&existingID)
+		if err == nil {
+			//Email already exists
+			http.Error(w, "Email already exists", http.StatusBadRequest)
+			return
+		}
+
+		id := uuid.New().String()
+		_, err := stmt.Exec(id, newTeacher.FirstName, newTeacher.LastName, newTeacher.Subject, newTeacher.Class, newTeacher.Email)
+		if err != nil {
+			http.Error(w, "Error inserting teacher", http.StatusInternalServerError)
+			return
+		}
+		newTeacher.ID = id
+		addedTeachers = append(addedTeachers, newTeacher)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
