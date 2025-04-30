@@ -3,20 +3,27 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/joho/godotenv"
 	"go-rest-api/internal/api/handlers"
 	mw "go-rest-api/internal/api/middleware"
 	"go-rest-api/internal/repository/sqlconnect"
 	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
-	port := ":3000"
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("Error loading .env file", err)
+	}
+
+	port := os.Getenv("API_PORT")
 
 	cert := "cert.pem"
 	key := "key.pem"
 
-	_, err := sqlconnect.ConnectDb("school")
+	_, err = sqlconnect.ConnectDb()
 	if err != nil {
 		fmt.Println(err)
 		return
