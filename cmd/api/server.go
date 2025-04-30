@@ -28,7 +28,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-
+	// goose create migration_name sql
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", handlers.RootHandler)
