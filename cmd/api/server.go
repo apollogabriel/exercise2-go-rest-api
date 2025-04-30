@@ -2,185 +2,12 @@ package main
 
 import (
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
+	"go-rest-api/internal/api/handlers"
 	mw "go-rest-api/internal/api/middleware"
 	"log"
 	"net/http"
-	"strconv"
-	"strings"
 )
-
-type Teacher struct {
-	ID        int    `json:"id,omitempty"`
-	FirstName string `json:"first_name,omitempty"`
-	LastName  string `json:"last_name,omitempty"`
-	Class     string `json:"class,omitempty"`
-	Subject   string `json:"subject,omitempty"`
-}
-
-var (
-	teachers = make(map[int]Teacher)
-	nextID   = 1
-)
-
-func init() {
-	teachers[nextID] = Teacher{
-		ID:        nextID,
-		FirstName: "Juan",
-		LastName:  "Perez",
-		Class:     "Apo",
-		Subject:   "Math",
-	}
-	nextID++
-	teachers[nextID] = Teacher{
-		ID:        nextID,
-		FirstName: "Pedro",
-		LastName:  "Castro",
-		Class:     "Rizal",
-		Subject:   "Science",
-	}
-	nextID++
-}
-
-func getTeachersHandler(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, "/teachers/")
-	idStr := strings.TrimSuffix(path, "/")
-
-	if idStr == "" {
-		firstName := r.URL.Query().Get("first_name")
-		lastName := r.URL.Query().Get("last_name")
-
-		teacherList := make([]Teacher, 0, len(teachers))
-
-		for _, value := range teachers {
-			if (firstName == "" || value.FirstName == firstName) && (lastName == "" || value.LastName == lastName) {
-				teacherList = append(teacherList, value)
-			}
-
-		}
-
-		response := struct {
-			Status string    `json:"status"`
-			Count  int       `json:"count"`
-			Data   []Teacher `json:"data"`
-		}{
-			Status: "success",
-			Count:  len(teacherList),
-			Data:   teacherList,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
-	}
-
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	teacher, exists := teachers[id]
-	if !exists {
-		http.Error(w, "Teacher not found", http.StatusNotFound)
-		return
-	}
-	json.NewEncoder(w).Encode(teacher)
-}
-
-func addTeachersHandler(w http.ResponseWriter, r *http.Request) {
-	var newTeachers []Teacher
-	err := json.NewDecoder(r.Body).Decode(&newTeachers)
-	if err != nil {
-		http.Error(w, "Error parsing JSON", http.StatusBadRequest)
-		return
-	}
-
-	addedTeachers := make([]Teacher, len(newTeachers))
-	for i, newTeacher := range newTeachers {
-		newTeacher.ID = nextID
-		teachers[nextID] = newTeacher
-		addedTeachers[i] = newTeacher
-		nextID++
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	response := struct {
-		Status string    `json:"status"`
-		Count  int       `json:"count"`
-		Data   []Teacher `json:"data"`
-	}{
-		Status: "success",
-		Count:  len(addedTeachers),
-		Data:   addedTeachers,
-	}
-
-	json.NewEncoder(w).Encode(response)
-}
-
-func rootHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello Root Route"))
-	fmt.Println("Hello Root Route")
-}
-
-func teachersHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		getTeachersHandler(w, r)
-	case http.MethodPost:
-		addTeachersHandler(w, r)
-	case http.MethodPut:
-		w.Write([]byte("Hello PUT teachers Route"))
-		fmt.Println("Hello PUT teachers Route")
-	case http.MethodPatch:
-		w.Write([]byte("Hello PATCH teachers Route"))
-		fmt.Println("Hello PATCH teachers Route")
-	case http.MethodDelete:
-		w.Write([]byte("Hello DELETE teachers Route"))
-		fmt.Println("Hello DELETE teachers Route")
-	}
-}
-
-func studentsHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		w.Write([]byte("Hello GET students Route"))
-		fmt.Println("Hello GET students Route")
-	case http.MethodPost:
-		w.Write([]byte("Hello POST students Route"))
-		fmt.Println("Hello POST students Route")
-	case http.MethodPut:
-		w.Write([]byte("Hello PUT students Route"))
-		fmt.Println("Hello PUT students Route")
-	case http.MethodPatch:
-		w.Write([]byte("Hello PATCH students Route"))
-		fmt.Println("Hello PATCH students Route")
-	case http.MethodDelete:
-		w.Write([]byte("Hello DELETE students Route"))
-		fmt.Println("Hello DELETE students Route")
-	}
-}
-
-func execsHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		w.Write([]byte("Hello GET execs Route"))
-		fmt.Println("Hello GET execs Route")
-	case http.MethodPost:
-		w.Write([]byte("Hello POST execs Route"))
-		fmt.Println("Hello POST execs Route")
-	case http.MethodPut:
-		w.Write([]byte("Hello PUT execs Route"))
-		fmt.Println("Hello PUT execs Route")
-	case http.MethodPatch:
-		w.Write([]byte("Hello PATCH execs Route"))
-		fmt.Println("Hello PATCH execs Route")
-	case http.MethodDelete:
-		w.Write([]byte("Hello DELETE execs Route"))
-		fmt.Println("Hello DELETE execs Route")
-	}
-}
 
 func main() {
 	port := ":3000"
@@ -190,14 +17,13 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/", rootHandler)
+	mux.HandleFunc("/", handlers.RootHandler)
 
-	mux.HandleFunc("/teachers/", teachersHandler)
-	mux.HandleFunc("/teachers", teachersHandler)
+	mux.HandleFunc("/teachers/", handlers.TeachersHandler)
 
-	mux.HandleFunc("/students/", studentsHandler)
+	mux.HandleFunc("/students/", handlers.StudentsHandler)
 
-	mux.HandleFunc("/execs/", execsHandler)
+	mux.HandleFunc("/execs/", handlers.ExecsHandler)
 
 	tlsConfig := &tls.Config{
 		MinVersion: tls.VersionTLS12,
