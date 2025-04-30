@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-rest-api/internal/api/handlers"
 	mw "go-rest-api/internal/api/middleware"
+	"go-rest-api/internal/repository/sqlconnect"
 	"log"
 	"net/http"
 )
@@ -14,6 +15,12 @@ func main() {
 
 	cert := "cert.pem"
 	key := "key.pem"
+
+	_, err := sqlconnect.ConnectDb("school")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	mux := http.NewServeMux()
 
@@ -47,7 +54,7 @@ func main() {
 	}
 
 	fmt.Println("Server is running on port:", port)
-	err := server.ListenAndServeTLS(cert, key)
+	err = server.ListenAndServeTLS(cert, key)
 	if err != nil {
 		log.Fatalln("Error starting server:", err)
 	}
