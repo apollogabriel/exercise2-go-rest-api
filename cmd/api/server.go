@@ -7,7 +7,7 @@ import (
 	mw "go-rest-api/internal/api/middleware"
 	"log"
 	"net/http"
-	"time"
+	"strconv"
 )
 
 type Teacher struct {
@@ -42,13 +42,19 @@ func init() {
 	nextID++
 }
 
-func getTeachersHandler(w http.ResponseWriter, _ *http.Request) {
+func getTeachersHandler(w http.ResponseWriter, r *http.Request) {
 	teacherList := make([]Teacher, 0, len(teachers))
 
-	for _, value := range teachers {
-		teacherList = append(teacherList, value)
+	limitQuery := r.URL.Query().Get("limit")
+	intLimit, _ := strconv.Atoi(limitQuery)
+	limitFilter := intLimit / 2
+
+	for range limitFilter {
+		for _, value := range teachers {
+			teacherList = append(teacherList, value)
+		}
 	}
-	fmt.Println("TeachersList:", teacherList)
+
 	response := struct {
 		Status string    `json:"status"`
 		Count  int       `json:"count"`
@@ -138,6 +144,7 @@ func main() {
 	mux.HandleFunc("/", rootHandler)
 
 	mux.HandleFunc("/teachers/", teachersHandler)
+	mux.HandleFunc("/teachers", teachersHandler)
 
 	mux.HandleFunc("/students/", studentsHandler)
 
@@ -147,18 +154,19 @@ func main() {
 		MinVersion: tls.VersionTLS12,
 	}
 
-	rl := mw.NewRateLimiter(5, time.Minute)
+	//rl := mw.NewRateLimiter(5, time.Minute)
 
-	hppOptions := mw.HPPOptions{
-		CheckQuery:                  true,
-		CheckBody:                   true,
-		CheckBodyOnlyForContentType: "application/x-www-form-urlencoded",
-		Whitelist:                   []string{"sortBy", "sortOrder", "name", "age", "class"},
-	}
+	//hppOptions := mw.HPPOptions{
+	//	CheckQuery:                  true,
+	//	CheckBody:                   true,
+	//	CheckBodyOnlyForContentType: "application/x-www-form-urlencoded",
+	//	Whitelist:                   []string{"sortBy", "sortOrder", "name", "age", "class"},
+	//}
 
 	server := &http.Server{
-		Addr:      port,
-		Handler:   mw.Hpp(hppOptions)(rl.Middleware(mw.ResponseTimeMiddleware(mw.SecurityHeaders(mw.Cors(mux))))),
+		Addr: port,
+		//Handler:   mw.Hpp(hppOptions)(rl.Middleware(mw.ResponseTimeMiddleware(mw.SecurityHeaders(mw.Cors(mux))))),
+		Handler:   mw.SecurityHeaders(mux),
 		TLSConfig: tlsConfig,
 	}
 
