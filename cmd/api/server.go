@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type Teacher struct {
@@ -43,29 +44,78 @@ func init() {
 }
 
 func getTeachersHandler(w http.ResponseWriter, r *http.Request) {
-	teacherList := make([]Teacher, 0, len(teachers))
+	path := strings.TrimPrefix(r.URL.Path, "/teachers/")
+	idStr := strings.TrimSuffix(path, "/")
 
-	limitQuery := r.URL.Query().Get("limit")
-	intLimit, _ := strconv.Atoi(limitQuery)
-	limitFilter := intLimit / 2
+	if idStr == "" {
+		firstName := r.URL.Query().Get("first_name")
+		lastName := r.URL.Query().Get("last_name")
 
-	for range limitFilter {
+		teacherList := make([]Teacher, 0, len(teachers))
+
 		for _, value := range teachers {
-			teacherList = append(teacherList, value)
+			if (firstName == "" || value.FirstName == firstName) && (lastName == "" || value.LastName == lastName) {
+				teacherList = append(teacherList, value)
+			}
+
 		}
+
+		response := struct {
+			Status string    `json:"status"`
+			Count  int       `json:"count"`
+			Data   []Teacher `json:"data"`
+		}{
+			Status: "success",
+			Count:  len(teacherList),
+			Data:   teacherList,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
 	}
 
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	teacher, exists := teachers[id]
+	if !exists {
+		http.Error(w, "Teacher not found", http.StatusNotFound)
+		return
+	}
+	json.NewEncoder(w).Encode(teacher)
+}
+
+func addTeachersHandler(w http.ResponseWriter, r *http.Request) {
+	var newTeachers []Teacher
+	err := json.NewDecoder(r.Body).Decode(&newTeachers)
+	if err != nil {
+		http.Error(w, "Error parsing JSON", http.StatusBadRequest)
+		return
+	}
+
+	addedTeachers := make([]Teacher, len(newTeachers))
+	for i, newTeacher := range newTeachers {
+		newTeacher.ID = nextID
+		teachers[nextID] = newTeacher
+		addedTeachers[i] = newTeacher
+		nextID++
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 	response := struct {
 		Status string    `json:"status"`
 		Count  int       `json:"count"`
 		Data   []Teacher `json:"data"`
 	}{
 		Status: "success",
-		Count:  len(teachers),
-		Data:   teacherList,
+		Count:  len(addedTeachers),
+		Data:   addedTeachers,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -79,8 +129,7 @@ func teachersHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		getTeachersHandler(w, r)
 	case http.MethodPost:
-		w.Write([]byte("Hello POST teachers Route"))
-		fmt.Println("Hello POST teachers Route")
+		addTeachersHandler(w, r)
 	case http.MethodPut:
 		w.Write([]byte("Hello PUT teachers Route"))
 		fmt.Println("Hello PUT teachers Route")
@@ -166,6 +215,7 @@ func main() {
 	server := &http.Server{
 		Addr: port,
 		//Handler:   mw.Hpp(hppOptions)(rl.Middleware(mw.ResponseTimeMiddleware(mw.SecurityHeaders(mw.Cors(mux))))),
+		//secureMux := utils.ApplyMiddlewares(mux, mw.Hpp(hppOptions), mw.Compression, mw.SecurityHeaders, mw.ResponseTimeMiddleware, rl.Middleware, mw.Cors)
 		Handler:   mw.SecurityHeaders(mux),
 		TLSConfig: tlsConfig,
 	}
