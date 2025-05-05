@@ -8,6 +8,11 @@ import (
 var allowedOrigins = []string{
 	"https://my-origin-url.com",
 	"https://www.myfrontend.com",
+	"https://localhost:5173/test/",
+	"https://localhost:5173/test/1",
+	"https://localhost:5173",
+	"https://[::1]:5173",
+	"https://[::1]:5173/test",
 }
 
 func Cors(next http.Handler) http.Handler {
@@ -21,6 +26,8 @@ func Cors(next http.Handler) http.Handler {
 			http.Error(w, "Not allowed by CORS", http.StatusForbidden)
 			return
 		}
+
+		//w.Header().Set("Access-Control-Allow-Origin", origin)
 
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Expose-Headers", "Authorization")

@@ -62,6 +62,22 @@ var lastNames = []string{
 	"Morgan", "Bell", "Murphy", "Bailey", "Rivera", "Cooper", "Richardson", "Cox",
 }
 
+var inventory_names = []string{
+	"OPPO","HONOR","SAMSUNG","REALME","HUAWEI","PHILIPS","CONDURA","AMERICAN HOME","TLC","HANABISHI",
+}
+
+var inventory_company = []string{
+	"HP","IBM","MICROSOFT","ORACLE","HRC","TOYOTA","HONDA","PSA","SUSHIKEN",
+}
+
+var inventory_date =[]string{
+	"2025-04-05","2025-04-06","2025-04-07","2025-04-08","2025-04-09","2025-04-01","2025-04-02","2025-04-03",
+}
+
+var available = []bool{
+	true,false,
+}
+
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -88,11 +104,122 @@ func main() {
 	}
 
 	// Generate and insert data
-	generateTeachers(db, 1000)
-	generateStudents(db, 1000)
-	generateExecutives(db, 1000)
+	//generateTeachers(db, 1000)
+	//generateStudents(db, 1000)
+	//generateExecutives(db, 1000)
+
+	generateLogin(db)
+	generateInventory(db,1000)
 
 	fmt.Println("Seed data generated successfully!")
+}
+
+//Generate Login
+func generateLogin(db *sql.DB){
+	stmt, err := db.Prepare(`
+		INSERT INTO Login (id2, username, password, account_status, account_group, email)
+		VALUES (?, ?, ?, ?, ? , ?)
+	`)
+	if err != nil {
+		log.Fatalf("Failed to prepare Login statement: %v", err)
+	}
+	defer stmt.Close()
+
+	id := uuid.New().String()
+
+	res, err := stmt.Exec(id,"admin", "iloveadmin", "Y", "A", "apollo@gmail.com")
+	if err != nil {
+		// Just log and continue if there's an error (likely duplicate email)
+		log.Printf("Error inserting login ", err)
+		
+	}
+
+	
+	fmt.Println("Login records generated",res)
+	
+
+	
+}
+
+func generateInventory(db *sql.DB, count int) {
+	stmt, err := db.Prepare(`
+		INSERT INTO inventory (item_no, item_name, company, date_entry, available)
+		VALUES (?, ?, ?, ?, ?)
+	`)
+	if err != nil {
+		log.Fatalf("Failed to prepare inventory statement: %v", err)
+	}
+	defer stmt.Close()
+
+	fmt.Printf("Generating %d inventory records...\n", count)
+
+	for i := 0; i < count; i++ {
+		item_no := uuid.New().String()
+		item_name := inventory_names[mathrand.IntN(len(inventory_names))]
+		company := inventory_company[mathrand.IntN(len(inventory_company))]
+		date_entry := inventory_date[mathrand.IntN(len(inventory_date))]
+		available2 := available[mathrand.IntN(len(available))]
+
+		// Creating a unique email with random suffix
+		
+
+		// Create UUID for ID
+		//id := uuid.New().String()
+
+		_, err := stmt.Exec(item_no, item_name, company, date_entry, available2)
+		if err != nil {
+			// Just log and continue if there's an error (likely duplicate email)
+			log.Printf("Error inserting inventory #%d: %v", i+1, err)
+			i-- // retry
+			continue
+		}
+
+		if (i+1)%100 == 0 {
+			fmt.Printf("  %d inventory records generated\n", i+1)
+		}
+	}
+}
+
+// generateStudents creates and inserts student records
+func generateStudentsInventory(db *sql.DB, count int) {
+	stmt, err := db.Prepare(`
+		INSERT INTO inventory (id, first_name, last_name, class, email)
+		VALUES (?, ?, ?, ?, ?)
+	`)
+	if err != nil {
+		log.Fatalf("Failed to prepare students statement: %v", err)
+	}
+	defer stmt.Close()
+
+	fmt.Printf("Generating %d student records...\n", count)
+
+	for i := 0; i < count; i++ {
+		firstName := firstNames[mathrand.IntN(len(firstNames))]
+		lastName := lastNames[mathrand.IntN(len(lastNames))]
+		class := classes[mathrand.IntN(len(classes))]
+
+		// Creating a unique email with random suffix
+		randomSuffix := makeRandomString(4)
+		email := fmt.Sprintf("student.%s.%s.%s@school.edu",
+			strings.ToLower(firstName),
+			strings.ToLower(lastName),
+			randomSuffix)
+
+		// Create UUID for ID
+		id := uuid.New().String()
+
+		_, err := stmt.Exec(id, firstName, lastName, class, email)
+		if err != nil {
+			// Just log and continue if there's an error (likely duplicate email)
+			log.Printf("Error inserting student #%d: %v", i+1, err)
+			i-- // retry
+			continue
+		}
+
+		if (i+1)%100 == 0 {
+			fmt.Printf("  %d student records generated\n", i+1)
+		}
+	}
 }
 
 // generateTeachers creates and inserts teacher records

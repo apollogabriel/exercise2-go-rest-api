@@ -1,6 +1,7 @@
 package main
 
 import (
+	
 	"crypto/tls"
 	"fmt"
 	"github.com/joho/godotenv"
@@ -10,7 +11,25 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"github.com/swaggo/http-swagger"
+    
+	
 )
+
+// @title Sample API
+// @version 1.0
+// @description A simple API with Swagger in Go
+// @host localhost:3000
+// @BasePath /api
+
+// @Summary Returns pong
+// @Description A basic ping endpoint
+// @Success 200 {string} string "pong"
+// @Router /api/ping [get]
+func pingHandler(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+    fmt.Fprint(w, `"pong"`)
+}
 
 func main() {
 	err := godotenv.Load()
@@ -34,11 +53,13 @@ func main() {
 
 	mux.HandleFunc("/", handlers.RootHandler)
 
-	mux.HandleFunc("/teachers/", handlers.TeachersHandler)
+	mux.HandleFunc("/login/", handlers.LoginHandler)
 
-	mux.HandleFunc("/students/", handlers.StudentsHandler)
+	mux.HandleFunc("/adduser/", handlers.AddUserHandler)
 
-	mux.HandleFunc("/execs/", handlers.ExecsHandler)
+	//http.Handle("/swagger/", httpSwagger.WrapHandler)
+
+	mux.HandleFunc("/swagger/", httpSwagger.WrapHandler)
 
 	tlsConfig := &tls.Config{
 		MinVersion: tls.VersionTLS12,
@@ -66,4 +87,6 @@ func main() {
 	if err != nil {
 		log.Fatalln("Error starting server:", err)
 	}
+
+	
 }

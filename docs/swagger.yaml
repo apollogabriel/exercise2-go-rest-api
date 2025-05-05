@@ -1,0 +1,156 @@
+basePath: /
+host: localhost:3000
+info:
+  contact: {}
+  description: Login API with Swagger in Go
+  title: Inventory API
+  version: "1.0"
+paths:
+  /adduser/:
+    post:
+      consumes:
+      - application/json
+      description: Add login credentials http://localhost:3000/login/     {"username":"admin","password","iloveadmin","account_status":"Y","account_group":"A","email":your@email.com}
+      parameters:
+      - description: Username
+        in: path
+        name: username
+        required: true
+        type: string
+      - description: Password
+        in: path
+        name: password
+        required: true
+        type: string
+      - description: "Y"
+        in: path
+        name: account_status
+        required: true
+        type: string
+      - description: A
+        in: path
+        name: account_group
+        required: true
+        type: string
+      - description: Email Add
+        in: path
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: add status
+          schema:
+            type: string
+      summary: Add User
+      tags:
+      - adduser
+  /login/:
+    delete:
+      consumes:
+      - application/json
+      description: Delete credentials  http://localhost:3000/login/1
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: delete status
+          schema:
+            type: string
+      summary: Delete User
+      tags:
+      - delete
+    get:
+      consumes:
+      - application/json
+      description: Login Verify status endpoint http://localhost:3000/login/?name=admin
+      parameters:
+      - description: Username
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: login status
+          schema:
+            type: string
+      summary: Verify User status
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Login endpoint  http://localhost:3000/login/     [{"username":"admin","password","iloveadmin"}]
+      parameters:
+      - description: Username
+        in: path
+        name: username
+        required: true
+        type: string
+      - description: Password
+        in: path
+        name: password
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: login status
+          schema:
+            type: string
+      summary: Returns login username and password
+      tags:
+      - login
+    put:
+      consumes:
+      - application/json
+      description: Update login credentials http://localhost:3000/login/     {"username":"admin","password","iloveadmin","account_status":"Y","account_group":"A","email":your@email.com}
+      parameters:
+      - description: Username
+        in: path
+        name: username
+        required: true
+        type: string
+      - description: Password
+        in: path
+        name: password
+        required: true
+        type: string
+      - description: "Y"
+        in: path
+        name: account_status
+        required: true
+        type: string
+      - description: A
+        in: path
+        name: account_group
+        required: true
+        type: string
+      - description: Email Add
+        in: path
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: update status
+          schema:
+            type: string
+      summary: Update User
+      tags:
+      - adduser
+swagger: "2.0"
